@@ -28,18 +28,22 @@ export default async function ProjectsPage() {
   })
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Projects</h1>
-        <Link href="/projects/new">
-          <Button>Create Project</Button>
-        </Link>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {projects.map((project: ProjectWithRelations) => (
-          <ProjectCard key={project.id} project={project as ProjectWithRelations} />
-        ))}
+    <div className="p-6">
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-semibold">Projects</h1>
+            <Link href="/projects/new">
+              <Button>Create Project</Button>
+            </Link>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project: ProjectWithRelations) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

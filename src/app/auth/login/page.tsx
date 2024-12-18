@@ -1,18 +1,26 @@
 "use client"
 
-import { signIn } from "next-auth/react"
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import Link from "next/link"
 import { toast } from "react-hot-toast"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import Logo from "@/components/logo"
+import { Link } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -20,24 +28,18 @@ const loginSchema = z.object({
 })
 
 export default function LoginPage() {
+  const { login } = useAuth()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
-  const callbackUrl = searchParams.get("from") || "/dashboard"
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   })
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     try {
       setIsLoading(true)
-      console.log("🚀 Login attempt:", values.email)
-
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,32 +47,13 @@ export default function LoginPage() {
       })
 
       const data = await response.json()
+      if (!response.ok) throw new Error(data.error)
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to sign in")
-      }
-
-      localStorage.setItem('token', data.token)
-      console.log("🔑 Token stored in localStorage")
-
-      const nextFetch = window.fetch
-      window.fetch = function (input, init) {
-        if (typeof input === 'string' && !input.includes('/api/auth/login')) {
-          init = init || {}
-          init.headers = {
-            ...init.headers,
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-        return nextFetch(input, init)
-      }
-
-      console.log("🧭 Navigating to:", callbackUrl)
-      await router.push(callbackUrl)
+      login(data.token, data.user)
+      router.push('/dashboard')
       toast.success("Signed in successfully")
     } catch (error) {
-      console.error("❌ Login error:", error)
-      toast.error(error instanceof Error ? error.message : "Something went wrong")
+      toast.error(error instanceof Error ? error.message : "Failed to sign in")
     } finally {
       setIsLoading(false)
     }
@@ -94,11 +77,7 @@ export default function LoginPage() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email"
-                      placeholder="name@example.com" 
-                      {...field} 
-                    />
+                    <Input placeholder="john@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -111,31 +90,31 @@ export default function LoginPage() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="password"
-                      {...field} 
-                    />
+                    <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                "Sign in"
+                "Sign In"
               )}
             </Button>
           </form>
         </Form>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Don't have an account?{" "}
+          <Link
+            href="/auth/register"
+            className="font-medium hover:text-primary"
+          >
+            Create one
+          </Link>
+        </p>
       </div>
     </div>
   )

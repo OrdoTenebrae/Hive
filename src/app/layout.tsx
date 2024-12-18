@@ -1,7 +1,7 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Header } from '@/components/layout/Header'
-import { Sidebar } from '@/components/layout/Sidebar'
+import { AuthProvider } from "@/contexts/AuthContext"
+import { Toaster } from "react-hot-toast"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,11 +18,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-background-light text-primary-dark`}>
-        <div className="flex min-h-screen">
-          <div className="flex-1">
-            <main className="p-6">{children}</main>
-          </div>
-        </div>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+        <Toaster />
       </body>
     </html>
   )

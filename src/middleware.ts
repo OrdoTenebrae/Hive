@@ -5,29 +5,40 @@ import { jwtVerify } from "jose"
 const secret = new TextEncoder().encode(process.env.JWT_SECRET)
 
 export async function middleware(request: NextRequest) {
-  const token = request.headers.get('Authorization')?.split('Bearer ')[1]
-  console.log("🔍 Middleware checking token:", !!token)
+  // Skip auth check for auth-related endpoints
+  if (request.nextUrl.pathname.startsWith('/api/auth/')) {
+    return NextResponse.next()
+  }
 
-  if (!token) {
-    console.log("❌ No token found in middleware")
-    return NextResponse.redirect(new URL("/auth/login", request.url))
+  const authHeader = request.headers.get('Authorization') || request.cookies.get('Authorization')?.value
+  
+  if (!authHeader) {
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
   try {
+    const token = authHeader.split('Bearer ')[1]
     const verified = await jwtVerify(token, secret)
-    console.log("✅ Token verified successfully")
-    return NextResponse.next()
+    const response = NextResponse.next()
+    response.headers.set('Authorization', `Bearer ${token}`)
+    return response
   } catch (error) {
-    console.log("❌ Token verification failed")
-    return NextResponse.redirect(new URL("/auth/login", request.url))
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 }
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/projects/:path*",
-    "/api/projects/:path*",
-    "/api/tasks/:path*"
+    '/dashboard/:path*',
+    '/api/:path*',
+    '/projects/:path*',
+    '/team/:path*',
+    '/settings/:path*',
   ]
 } 

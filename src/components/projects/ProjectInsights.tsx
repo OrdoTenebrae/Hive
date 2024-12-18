@@ -1,3 +1,5 @@
+"use client"
+
 import { Card } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import { Loader2, AlertTriangle, TrendingUp, Clock } from "lucide-react"

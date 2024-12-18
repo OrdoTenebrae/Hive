@@ -1,104 +1,101 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { X } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 import { User } from ".prisma/client"
-import { useTeamStore } from "@/lib/store/team-store"
+import { useState } from "react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { X, UserPlus, Activity } from "lucide-react"
 
 interface ManageTeamModalProps {
   projectId: string
-  members: User[]
+  members: (User & {
+    tasks?: { status: string }[]
+  })[]
   owner: User
 }
 
 export function ManageTeamModal({ projectId, members, owner }: ManageTeamModalProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [open, setOpen] = useState(false)
   const [email, setEmail] = useState("")
-  const router = useRouter()
-  const { setMembers, addMember, removeMember } = useTeamStore()
-
-  useEffect(() => {
-    setMembers(members)
-  }, [members, setMembers])
-
-  async function inviteMember(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setIsLoading(true)
-
-    try {
-      const response = await fetch(`/api/projects/${projectId}/members`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-      })
-
-      if (!response.ok) throw new Error("Failed to invite member")
-      
-      const data = await response.json()
-      addMember(data.members[data.members.length - 1])
-      setEmail("")
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const [isLoading, setIsLoading] = useState(false)
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">Manage Team</Button>
+        <Button variant="outline" size="sm">
+          <UserPlus className="h-4 w-4 mr-2" />
+          Manage Team
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Manage Team Members</DialogTitle>
+          <DialogTitle>Team Management</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          <form onSubmit={inviteMember} className="flex gap-2">
-            <Input
-              placeholder="member@example.com"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Button type="submit" disabled={isLoading}>
-              Invite
-            </Button>
-          </form>
 
-          <div className="space-y-4">
-            {members.map((member) => (
-              <div key={member.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Avatar>
-                    <AvatarFallback>
-                      {member.name?.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{member.name}</p>
-                    <p className="text-sm text-primary-medium">{member.email}</p>
+        <Tabs defaultValue="members">
+          <TabsList>
+            <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="members" className="space-y-4">
+            <form className="flex gap-2">
+              <Input
+                placeholder="member@example.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Button type="submit">Invite</Button>
+            </form>
+
+            <div className="space-y-4">
+              {members.map((member) => (
+                <div key={member.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarFallback>
+                        {member.name?.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{member.name}</p>
+                      <p className="text-sm text-muted-foreground">{member.email}</p>
+                    </div>
                   </div>
+                  {member.id !== owner.id && (
+                    <Button variant="ghost" size="sm">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                {member.id !== owner.id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeMember(member.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="performance">
+            <div className="space-y-6">
+              {members.map((member) => {
+                const completedTasks = member.tasks?.filter(t => t.status === 'COMPLETED').length || 0
+                const totalTasks = member.tasks?.length || 0
+                const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
+
+                return (
+                  <div key={member.id} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <p className="font-medium">{member.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {completedTasks} of {totalTasks} tasks
+                      </p>
+                    </div>
+                    <Progress value={progress} />
+                  </div>
+                )
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   )

@@ -1,3 +1,5 @@
+"use client"
+
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
@@ -40,31 +42,23 @@ export function TeamOverview() {
   }, [])
 
   return (
-    <Card className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Team Overview</h2>
-      <div className="space-y-4">
+    <Card>
+      <div className="border-b border-border p-4">
+        <h2 className="font-semibold">Team Members</h2>
+      </div>
+      <div className="divide-y divide-border">
         {members.map(member => (
-          <div key={member.id} className="flex items-center gap-4">
-            <Avatar>
-              <AvatarFallback>
-                {member.name.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-baseline">
-                <p className="font-medium">{member.name}</p>
-                <p className="text-sm text-primary-medium">{member.role}</p>
-              </div>
-              <p className="text-sm text-primary-medium truncate">
-                Working on: {member.activeProject}
-              </p>
-              <div className="mt-2">
-                <Progress 
-                  value={(member.tasksCompleted / member.totalTasks) * 100} 
-                  className="h-2"
-                />
-                <p className="text-xs text-primary-medium mt-1">
-                  {member.tasksCompleted} of {member.totalTasks} tasks completed
+          <div key={member.id} className="p-4 hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="text-xs">
+                  {member.name.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{member.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {member.activeProject}
                 </p>
               </div>
             </div>

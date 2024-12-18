@@ -23,4 +23,36 @@ export async function GET() {
   })
 
   return NextResponse.json(projects)
+}
+
+export async function POST(req: Request) {
+  const payload = await verifyJwt()
+  
+  if (!payload) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  try {
+    const json = await req.json()
+    const project = await prisma.project.create({
+      data: {
+        name: json.name,
+        description: json.description,
+        githubRepo: json.githubRepo,
+        ownerId: payload.id,
+        members: {
+          connect: { id: payload.id }
+        }
+      },
+      include: {
+        owner: true,
+        members: true
+      }
+    })
+
+    return NextResponse.json(project)
+  } catch (error) {
+    console.error("Failed to create project:", error)
+    return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
+  }
 } 

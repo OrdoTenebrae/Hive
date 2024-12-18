@@ -1,11 +1,26 @@
-import { UserNav } from "@/components/layout/UserNav"
+import { UserNav } from "./UserNav"
+import { Search } from "./Search"
+import { Bell } from "lucide-react"
+import { Button } from "../ui/button"
 
-export function Header() {
+interface HeaderProps {
+  user: {
+    name: string | null;
+    email: string;
+  }
+}
+
+export function Header({ user }: HeaderProps) {
   return (
-    <header className="border-b border-primary-light/10">
-      <div className="flex h-16 items-center px-4">
-        <div className="ml-auto flex items-center space-x-4">
-          <UserNav />
+    <header className="h-16 border-b border-gray-200 bg-white">
+      <div className="flex h-full items-center justify-between px-6">
+        <Search />
+        
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" className="text-gray-700">
+            <Bell className="w-5 h-5" />
+          </Button>
+          <UserNav user={user} />
         </div>
       </div>
     </header>

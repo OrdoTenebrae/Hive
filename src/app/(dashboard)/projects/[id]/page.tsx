@@ -4,11 +4,11 @@ import { notFound, redirect } from "next/navigation"
 import { ProjectHeader } from "@/components/projects/ProjectHeader"
 import { TaskBoard } from "@/components/projects/TaskBoard"
 
-export default async function ProjectPage({
-  params
-}: {
+type PageProps = {
   params: { id: string }
-}) {
+}
+
+export default async function ProjectPage(props: PageProps) {
   const payload = await verifyJwt()
   
   if (!payload) {
@@ -16,7 +16,7 @@ export default async function ProjectPage({
   }
 
   const project = await prisma.project.findUnique({
-    where: { id: params.id },
+    where: { id: props.params.id },
     include: {
       owner: true,
       members: true,
@@ -33,9 +33,15 @@ export default async function ProjectPage({
   }
 
   return (
-    <div className="space-y-6">
-      <ProjectHeader project={project} />
-      <TaskBoard projectId={project.id} tasks={project.tasks} />
+    <div className="p-6">
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12">
+          <ProjectHeader project={project} />
+          <div className="mt-6">
+            <TaskBoard projectId={project.id} tasks={project.tasks} />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

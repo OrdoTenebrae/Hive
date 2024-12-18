@@ -6,6 +6,14 @@ import { signJwt } from "@/lib/auth"
 import { Role } from ".prisma/client"
 
 export async function POST(req: Request) {
+  if (!process.env.JWT_SECRET) {
+    console.error("❌ JWT_SECRET is not configured")
+    return NextResponse.json(
+      { error: "Server configuration error" },
+      { status: 500 }
+    )
+  }
+
   try {
     const body = await req.json()
     const data = registerSchema.parse(body)

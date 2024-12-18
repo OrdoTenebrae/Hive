@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import Link from "next/link"
-import { signIn } from "next-auth/react"
 import { toast } from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Loader2 } from "lucide-react"
 import Logo from "@/components/logo"
+import { useAuth } from "@/contexts/AuthContext"
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -28,6 +28,7 @@ const registerSchema = z.object({
 })
 
 export default function RegisterPage() {
+  const { login } = useAuth()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -50,16 +51,13 @@ export default function RegisterPage() {
       })
 
       const data = await response.json()
+      if (!response.ok) throw new Error(data.error)
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to register")
-      }
-
+      login(data.token, data.user)
+      router.push('/dashboard')
       toast.success("Account created successfully")
-      router.push("/dashboard")
-      router.refresh()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Something went wrong")
+      toast.error(error instanceof Error ? error.message : "Failed to register")
     } finally {
       setIsLoading(false)
     }

@@ -1,5 +1,6 @@
+"use client"
+
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { GitHubLogoIcon } from "@radix-ui/react-icons"
 import { CreateTaskModal } from "@/components/projects/CreateTaskModal"

@@ -1,3 +1,5 @@
+"use client"
+
 import { Card } from "@/components/ui/card"
 import { GitHubLogoIcon } from "@radix-ui/react-icons"
 import { useState, useEffect } from "react"
