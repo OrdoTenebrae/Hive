@@ -35,6 +35,7 @@ model Project {
   githubRepo  String?
   tasks       Task[]    @relation("ProjectTasks")
   activities  Activity[]
+  installedModules String[] @default([])
 }
 
 model Task {

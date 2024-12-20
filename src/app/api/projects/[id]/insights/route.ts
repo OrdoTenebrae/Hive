@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { predictWorkload, generatePhaseReport } from "@/lib/services/ai-services"
 import { Task } from '.prisma/client'
 import { User } from '.prisma/client'
+import { ProjectWithFullRelations } from "@/types/project"
 
 export async function GET(
   request: Request,
@@ -41,7 +42,7 @@ export async function GET(
     }
 
     // Get AI predictions
-    const workloadAnalysis = await predictWorkload(project)
+    const workloadAnalysis = await predictWorkload(project as ProjectWithFullRelations)
     const phaseReport = await generatePhaseReport(project)
 
     return NextResponse.json({
