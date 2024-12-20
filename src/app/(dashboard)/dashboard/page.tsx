@@ -1,8 +1,6 @@
-
 import { DashboardStats } from "@/components/dashboard/DashboardStats"
 import { ProjectsList } from "@/components/dashboard/ProjectsList"
 import { RecentActivity } from "@/components/dashboard/RecentActivity"
-import { TeamOverview } from "@/components/dashboard/TeamOverview"
 import { Card } from "@/components/ui/card"
 import { verifyJwt } from "@/lib/auth"
 import { redirect } from "next/navigation"
@@ -52,7 +50,6 @@ export default async function DashboardPage() {
         </div>
         
         <div className="col-span-12 lg:col-span-3 space-y-6">
-          <TeamOverview />
           <RecentActivity />
         </div>
       </div>
