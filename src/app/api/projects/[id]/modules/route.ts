@@ -20,8 +20,8 @@ export async function GET(
     })
 
     if (!project) return new NextResponse("Project not found", { status: 404 })
-
-    const modules = project.installedModules as ModuleType[]
+    
+    const modules = project.installedModules as ModuleType[] || ['kanban']
     return NextResponse.json({ modules })
   } catch (error) {
     return new NextResponse("Internal Error", { status: 500 })
@@ -37,17 +37,30 @@ export async function POST(
     if (!payload) return new NextResponse("Unauthorized", { status: 401 })
 
     const { moduleId } = await req.json()
+    
+    const project = await prisma.project.findUnique({
+      where: { id: params.id },
+      select: { installedModules: true }
+    })
 
-    const project = await prisma.project.update({
+    if (!project) return new NextResponse("Project not found", { status: 404 })
+
+    const currentModules = project.installedModules as ModuleType[] || []
+    
+    if (currentModules.includes(moduleId)) {
+      return new NextResponse("Module already installed", { status: 400 })
+    }
+
+    await prisma.project.update({
       where: { id: params.id },
       data: {
         installedModules: {
-          push: moduleId
+          set: [...currentModules, moduleId]
         }
       }
     })
 
-    return NextResponse.json(project)
+    return NextResponse.json({ modules: [...currentModules, moduleId] })
   } catch (error) {
     return new NextResponse("Internal Error", { status: 500 })
   }

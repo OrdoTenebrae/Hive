@@ -3,6 +3,7 @@ import './globals.css'
 import { AuthProvider } from "@/contexts/AuthContext"
 import { Toaster } from "react-hot-toast"
 import Script from 'next/script'
+import { AnimatePresence } from "framer-motion"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -29,9 +30,11 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} bg-background-light text-primary-dark`}>
         <AuthProvider>
-          {children}
+          <AnimatePresence mode="wait" initial={false}>
+            {children}
+          </AnimatePresence>
         </AuthProvider>
-        <Toaster />
+        <Toaster position="bottom-right" />
       </body>
     </html>
   )

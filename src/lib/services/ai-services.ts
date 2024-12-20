@@ -103,3 +103,82 @@ export function parseWorkloadPrediction(analysis: string) {
     timelineImpact: analysis.match(/Timeline Impact:(.*?)$/s)?.[1]?.trim() || 'Unknown'
   }
 }
+
+export async function generateProjectInsights(project: ProjectWithFullRelations) {
+  const analysis = await processAIResponse(
+    'free',
+    'low',
+    'Analyze this project and provide insights about performance, predictions, and workload.',
+    JSON.stringify(project)
+  )
+
+  return {
+    performance: {
+      velocity: calculateVelocity(project.tasks),
+      completionRate: calculateCompletionRate(project.tasks),
+      avgTaskDuration: calculateAvgDuration(project.tasks)
+    },
+    predictions: {
+      estimatedCompletion: calculateEstimatedCompletion(project),
+      potentialDelays: extractDelays(analysis || ''),
+      recommendations: extractRecommendations(analysis || '')
+    },
+    workload: project.members.map(member => ({
+      memberId: member.id,
+      memberName: member.name || 'Unknown',
+      taskCount: project.tasks.filter(t => t.assigneeId === member.id).length,
+      utilizationRate: calculateUtilization(project.tasks, member.id)
+    }))
+  }
+}
+
+function calculateVelocity(tasks: Task[]): number {
+  const completedTasks = tasks.filter(t => t.status === 'COMPLETED');
+  const timeFrame = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+  const recentTasks = completedTasks.filter(t => 
+    new Date().getTime() - new Date(t.updatedAt).getTime() < timeFrame
+  );
+  return recentTasks.length;
+}
+
+function calculateCompletionRate(tasks: Task[]): number {
+  if (tasks.length === 0) return 0;
+  return (tasks.filter(t => t.status === 'COMPLETED').length / tasks.length) * 100;
+}
+
+function calculateAvgDuration(tasks: Task[]): number {
+  const completedTasks = tasks.filter(t => t.status === 'COMPLETED');
+  if (completedTasks.length === 0) return 0;
+  
+  const totalDuration = completedTasks.reduce((sum, task) => {
+    const duration = new Date(task.updatedAt).getTime() - new Date(task.createdAt).getTime();
+    return sum + duration;
+  }, 0);
+  
+  return Math.round(totalDuration / (completedTasks.length * 24 * 60 * 60 * 1000));
+}
+
+function calculateEstimatedCompletion(project: ProjectWithFullRelations): string {
+  const incompleteTasks = project.tasks.filter(t => t.status !== 'COMPLETED');
+  const avgDuration = calculateAvgDuration(project.tasks);
+  const estimatedDays = avgDuration * incompleteTasks.length;
+  const estimatedDate = new Date();
+  estimatedDate.setDate(estimatedDate.getDate() + estimatedDays);
+  return estimatedDate.toISOString().split('T')[0];
+}
+
+function extractDelays(analysis: string): string[] {
+  return analysis.match(/Delays:(.*?)(?=\n|$)/s)?.[1]?.split(',').map(s => s.trim()) || [];
+}
+
+function extractRecommendations(analysis: string): string[] {
+  return analysis.match(/Recommendations:(.*?)(?=\n|$)/s)?.[1]?.split(',').map(s => s.trim()) || [];
+}
+
+function calculateUtilization(tasks: Task[], memberId: string): number {
+  const memberTasks = tasks.filter(t => t.assigneeId === memberId);
+  const activeTasks = memberTasks.filter(t => t.status === 'IN_PROGRESS');
+  const maxRecommendedTasks = 5; // Configurable threshold
+  
+  return Math.min((activeTasks.length / maxRecommendedTasks) * 100, 100);
+}

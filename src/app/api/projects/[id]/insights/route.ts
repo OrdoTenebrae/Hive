@@ -1,10 +1,11 @@
 import { verifyJwt } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { predictWorkload, generatePhaseReport } from "@/lib/services/ai-services"
+import { predictWorkload, generatePhaseReport, generateProjectInsights } from "@/lib/services/ai-services"
 import { Task } from '.prisma/client'
 import { User } from '.prisma/client'
 import { ProjectWithFullRelations } from "@/types/project"
+import { AIDataService, isStale } from '@/lib/services/ai-data'
 
 export async function GET(
   request: Request,
@@ -16,14 +17,11 @@ export async function GET(
   }
 
   try {
+    // Get core project data from PostgreSQL
     const project = await prisma.project.findUnique({
       where: { id: params.id },
       include: {
-        tasks: {
-          include: {
-            assignee: true
-          }
-        },
+        tasks: { include: { assignee: true } },
         members: true,
         owner: true
       }
@@ -33,35 +31,25 @@ export async function GET(
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
-    // Calculate basic metrics
-    const completedTasks = project.tasks.filter((t: Task) => t.status === 'COMPLETED')
-    const performance = {
-      velocity: completedTasks.length / (project.tasks.length || 1),
-      completionRate: (completedTasks.length / project.tasks.length) * 100 || 0,
-      avgTaskDuration: calculateAvgDuration(completedTasks)
+    // Get AI insights from MongoDB
+    const aiService = new AIDataService()
+    const aiInsights = await aiService.getData(params.id, 'project_insights')
+
+    // If no insights exist or they're old, generate new ones
+    if (!aiInsights || isStale(aiInsights.metadata.updatedAt)) {
+      const newInsights = await generateProjectInsights(project as ProjectWithFullRelations)
+      await aiService.saveData({
+        referenceId: params.id,
+        documentType: 'project_insights',
+        data: newInsights
+      })
+      return NextResponse.json(newInsights)
     }
 
-    // Get AI predictions
-    const workloadAnalysis = await predictWorkload(project as ProjectWithFullRelations)
-    const phaseReport = await generatePhaseReport(project)
-
-    return NextResponse.json({
-      performance,
-      predictions: {
-        estimatedCompletion: calculateEstimatedCompletion(project),
-        potentialDelays: extractDelays(workloadAnalysis || ''),
-        recommendations: extractRecommendations(workloadAnalysis || '')
-      },
-      workload: project.members.map((member: User) => ({
-        memberId: member.id,
-        memberName: member.name,
-        taskCount: project.tasks.filter((t: Task) => t.assigneeId === member.id).length,
-        utilizationRate: calculateUtilization(project.tasks, member.id)
-      }))
-    })
+    return NextResponse.json(aiInsights.data)
   } catch (error) {
-    console.error('Error generating insights:', error)
-    return NextResponse.json({ error: "Failed to generate insights" }, { status: 500 })
+    console.error('Error fetching insights:', error)
+    return NextResponse.json({ error: "Failed to fetch insights" }, { status: 500 })
   }
 }
 

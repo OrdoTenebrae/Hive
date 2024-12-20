@@ -1,41 +1,66 @@
+import { prisma } from "@/lib/prisma"
 import { verifyJwt } from "@/lib/auth"
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 
-export async function POST(
-  req: Request,
+export async function GET(
+  request: Request,
   { params }: { params: { id: string } }
 ) {
-  const payload = await verifyJwt()
-  
-  if (!payload) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   try {
-    const json = await req.json()
-    const user = await prisma.user.findUnique({
-      where: { email: json.email }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    const payload = await verifyJwt()
+    if (!payload) {
+      return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const project = await prisma.project.update({
+    const project = await prisma.project.findUnique({
       where: { id: params.id },
-      data: {
-        members: {
-          connect: { id: user.id }
-        }
-      },
-      include: {
-        members: true
+      include: { 
+        members: true,
+        owner: true 
       }
     })
 
-    return NextResponse.json(project)
+    if (!project) {
+      return new NextResponse("Project not found", { status: 404 })
+    }
+
+    // Filter out duplicates by ID
+    const allMembers = [
+      project.owner,
+      ...project.members.filter(member => member.id !== project.owner.id)
+    ]
+
+    return NextResponse.json(allMembers)
   } catch (error) {
-    return NextResponse.json({ error: "Failed to add member" }, { status: 500 })
+    return new NextResponse("Internal Error", { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const payload = await verifyJwt()
+    if (!payload) {
+      return new NextResponse("Unauthorized", { status: 401 })
+    }
+
+    const data = await request.json()
+    const task = await prisma.task.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        assigneeId: data.assigneeId,
+        projectId: data.projectId,
+        status: data.status,
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      },
+      include: {
+        assignee: true
+      }
+    })
+
+    return NextResponse.json(task)
+  } catch (error) {
+    console.error('Task creation error:', error)
+    return new NextResponse("Internal Error", { status: 500 })
   }
 }

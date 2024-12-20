@@ -23,11 +23,11 @@ export function TaskCard({ task }: TaskCardProps) {
           <div className="flex items-center gap-2">
             <Avatar className="w-6 h-6">
               <AvatarFallback className="text-xs">
-                {task.assignee.name?.slice(0, 2).toUpperCase()}
+                {task.assignee?.name?.slice(0, 2).toUpperCase() || 'NA'}
               </AvatarFallback>
             </Avatar>
             <span className="text-xs text-primary-medium">
-              {task.assignee.name}
+              {task.assignee?.name || 'Unassigned'}
             </span>
           </div>
           {task.dueDate && (

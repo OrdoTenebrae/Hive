@@ -4,6 +4,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTaskStore } from "@/lib/store/task-store"
+import { Plus } from "lucide-react"
+import { TaskWithAssignee } from "@/types/project"
+import { toast } from "react-hot-toast"
+import { fetchClient } from "@/lib/fetch-client"
 
 interface CreateTaskModalProps {
   projectId: string
@@ -13,7 +18,7 @@ interface CreateTaskModalProps {
 export function CreateTaskModal({ projectId, members }: CreateTaskModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [open, setOpen] = useState(false)
-  const router = useRouter()
+  const { setTasks } = useTaskStore()
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -25,21 +30,21 @@ export function CreateTaskModal({ projectId, members }: CreateTaskModalProps) {
       description: formData.get("description"),
       assigneeId: formData.get("assigneeId"),
       dueDate: formData.get("dueDate"),
-      projectId
+      projectId,
+      status: "TODO"
     }
 
     try {
-      const response = await fetch("/api/tasks", {
+      const newTask = await fetchClient("/api/tasks", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
+      }) as TaskWithAssignee
 
-      if (!response.ok) throw new Error("Failed to create task")
-      
+      setTasks((prev: TaskWithAssignee[]) => [...prev, newTask])
       setOpen(false)
-      router.refresh()
+      toast.success("Task created successfully")
     } catch (error) {
+      toast.error("Failed to create task")
       console.error(error)
     } finally {
       setIsLoading(false)
@@ -49,7 +54,9 @@ export function CreateTaskModal({ projectId, members }: CreateTaskModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Add Task</Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Plus className="w-4 h-4" />
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -90,11 +97,16 @@ export function CreateTaskModal({ projectId, members }: CreateTaskModalProps) {
               className="w-full p-2 border rounded-lg"
               required
             >
-              {members.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name}
-                </option>
-              ))}
+              <option value="">Select assignee</option>
+              {members?.length > 0 ? (
+                members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name || 'Unnamed Member'}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No team members available</option>
+              )}
             </select>
           </div>
 

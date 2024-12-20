@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { verifyJwt } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
+import { PageTransition } from "@/components/transitions/PageTransition"
 
 export default async function DashboardPage() {
   const payload = await verifyJwt()
@@ -33,26 +34,28 @@ export default async function DashboardPage() {
   })
 
   return (
-    <div className="p-6">
-      
-      <div className="mt-8 grid grid-cols-12 gap-6">
-        <div className="col-span-12 lg:col-span-9 space-y-6">
-          <DashboardStats 
-            totalProjects={stats._count._all} 
-            completedTasks={completedTasks} 
-          />
-          <Card className="overflow-hidden">
-            <div className="border-b border-border p-4">
-              <h2 className="font-semibold">Your Projects</h2>
-            </div>
-            <ProjectsList />
-          </Card>
-        </div>
+    <PageTransition>
+      <div className="p-6">
         
-        <div className="col-span-12 lg:col-span-3 space-y-6">
-          <RecentActivity />
+        <div className="mt-8 grid grid-cols-12 gap-6">
+          <div className="col-span-12 lg:col-span-9 space-y-6">
+            <DashboardStats 
+              totalProjects={stats._count._all} 
+              completedTasks={completedTasks} 
+            />
+            <Card className="overflow-hidden">
+              <div className="border-b border-border p-4">
+                <h2 className="font-semibold">Your Projects</h2>
+              </div>
+              <ProjectsList />
+            </Card>
+          </div>
+          
+          <div className="col-span-12 lg:col-span-3 space-y-6">
+            <RecentActivity />
+          </div>
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }
