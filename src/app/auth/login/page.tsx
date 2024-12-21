@@ -71,7 +71,7 @@ export default function LoginPage() {
           <Card className="w-full max-w-md p-8 border-0 shadow-lg">
             <div className="text-center mb-8">
               <Link href="/" className="text-2xl font-bold tracking-tight">
-                Hive
+                <Logo />
               </Link>
               <h1 className="mt-6 text-2xl font-bold tracking-tight">Welcome back</h1>
               <p className="mt-2 text-sm text-gray-600">

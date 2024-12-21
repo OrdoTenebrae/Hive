@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Brain, GitBranch, BarChart2, Users, Zap, Lock, ArrowRight, Github, Twitter, Linkedin } from "lucide-react";
 import { useEffect } from 'react';
+import Logo from "@/components/logo";
+import { AnimatedText } from "@/components/ui/AnimatedText";
 
 export default function LandingPage() {
   useEffect(() => {
@@ -48,14 +50,16 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
+          <div className="flex-shrink-0 mr-16">
             <Link href="/" className="font-semibold text-xl tracking-tight">
-              Hive
+              <Logo />
             </Link>
-            <div className="hidden md:flex gap-6">
+          </div>
+          <div className="flex-1 flex justify-center">
+            <div className="hidden md:flex gap-8">
               <Link href="#features" className="text-gray-600 hover:text-gray-900">Features</Link>
-              <Link href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link>
+              <Link href="/pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link>
               <Link href="/docs" className="text-gray-600 hover:text-gray-900">Documentation</Link>
             </div>
           </div>
@@ -85,22 +89,25 @@ export default function LandingPage() {
             <div className="text-center max-w-3xl mx-auto">
               <div className="mb-8 inline-block">
                 <div className="rounded-full bg-black/5 px-4 py-1.5 text-sm font-medium text-gray-900">
-                  Just Launched: AI Task Scheduling
+                  Just Launched: HiveChat
                 </div>
               </div>
               <h1 className="text-6xl font-bold tracking-tight text-gray-900 mb-8">
-                AI-Powered Project
-                <span className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent"> Management</span>
+                <AnimatedText text="Manage your projects" />
+                <span className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent block mt-3">
+                  <AnimatedText text="with an assistant" delay={800} />
+                </span>
               </h1>
-              <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-                Streamline collaboration, automate workflows, and unlock insights with our intelligent project management platform.
+              <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-2xl mx-auto">
+                Let <span className="font-semibold text-amber-500">Bee</span> be your assistant, 
+                while you <span className="font-medium text-gray-900">focus on building great things</span>
               </p>
               <div className="flex gap-4 justify-center">
-                <Link href="/auth/signup" 
+                <Link href="/auth/register" 
                   className="bg-black text-white px-8 py-4 rounded-lg hover:bg-gray-800 font-medium text-lg inline-flex items-center gap-2 shadow-sm hover:shadow-md transition-all">
                   Start Free Trial <ArrowRight className="w-5 h-5" />
                 </Link>
-                <Link href="#demo" 
+                <Link href="#demo"
                   className="border-2 border-gray-200 text-gray-900 px-8 py-4 rounded-lg hover:border-gray-300 font-medium text-lg transition-all">
                   Watch Demo
                 </Link>

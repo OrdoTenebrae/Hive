@@ -8,8 +8,17 @@ import { AnimatePresence } from "framer-motion"
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Freelance Suite',
+  title: 'Hive',
   description: 'Professional project management platform for freelancers and teams',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png' },
+    ],
+  },
 }
 
 export default function RootLayout({

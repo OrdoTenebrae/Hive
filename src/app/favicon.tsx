@@ -1,16 +1,22 @@
-export default function Logo({ className }: { className?: string }) {
-  return (
-    <div className={`flex items-center justify-center gap-0.5 ${className}`}>
+import { ImageResponse } from 'next/og'
+
+export const runtime = 'edge'
+export const size = {
+  width: 32,
+  height: 32,
+}
+export const contentType = 'image/svg+xml'
+
+export default function Icon() {
+  return new ImageResponse(
+    (
       <svg
-        width="78"
-        height="78"
+        width="32"
+        height="32"
         viewBox="0 0 32 32"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
         style={{ transform: 'rotate(180deg) rotate(12deg)' }}
-        className="relative -top-1"
       >
-        {/* Left Hexagon */}
         <path
           d="M11 8L15 6L19 8L19 12L15 14L11 12L11 8Z"
           fill="#FCD34D"
@@ -19,8 +25,6 @@ export default function Logo({ className }: { className?: string }) {
           strokeLinejoin="miter"
           strokeMiterlimit="10"
         />
-        
-        {/* Right Hexagon */}
         <path
           d="M19 8L23 6L27 8L27 12L23 14L19 12L19 8Z"
           fill="#FBBF24"
@@ -29,8 +33,6 @@ export default function Logo({ className }: { className?: string }) {
           strokeLinejoin="miter"
           strokeMiterlimit="10"
         />
-        
-        {/* Bottom Hexagon */}
         <path
           d="M15 14L19 12L23 14L23 18L19 20L15 18L15 14Z"
           fill="#F59E0B"
@@ -39,8 +41,6 @@ export default function Logo({ className }: { className?: string }) {
           strokeLinejoin="miter"
           strokeMiterlimit="10"
         />
-        
-        {/* Center Point */}
         <circle
           cx="19"
           cy="12"
@@ -48,7 +48,7 @@ export default function Logo({ className }: { className?: string }) {
           fill="#92400E"
         />
       </svg>
-      <span className="font-bold text-3xl tracking-tight relative right-4 top-0.5">Hive</span>
-    </div>
+    ),
+    { ...size }
   )
 } 
