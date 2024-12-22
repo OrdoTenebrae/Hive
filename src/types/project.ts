@@ -12,5 +12,10 @@ export type ProjectWithFullRelations = ProjectWithRelations & {
 }
 
 export type TaskWithAssignee = Task & {
-  assignee: User
+  assignee?: User
+  labels?: string[]
+  subtasks?: { id: string; completed: boolean }[]
+  completedSubtasks: number
+  estimatedTime?: number
+  priority: 'HIGH' | 'MEDIUM' | 'LOW'
 }

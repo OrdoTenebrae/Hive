@@ -8,18 +8,20 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { useTaskStore } from "@/lib/store/task-store"
 import { TaskWithAssignee } from "@/types/project"
 import { fetchClient } from "@/lib/fetch-client"
+import { cn } from "@/lib/utils"
 
 type Column = {
   id: string
   title: string
   status: Task["status"]
+  color: string
 }
 
 const columns: Column[] = [
-  { id: "todo", title: "To Do", status: "TODO" },
-  { id: "in_progress", title: "In Progress", status: "IN_PROGRESS" },
-  { id: "review", title: "In Review", status: "IN_REVIEW" },
-  { id: "done", title: "Done", status: "COMPLETED" }
+  { id: "todo", title: "To Do", status: "TODO", color: "bg-background hover:bg-muted/40" },
+  { id: "in_progress", title: "In Progress", status: "IN_PROGRESS", color: "bg-background hover:bg-muted/40" },
+  { id: "review", title: "In Review", status: "IN_REVIEW", color: "bg-background hover:bg-muted/40" },
+  { id: "done", title: "Done", status: "COMPLETED", color: "bg-background hover:bg-muted/40" }
 ]
 
 interface TaskBoardProps {
@@ -60,43 +62,58 @@ export function TaskBoard({ projectId, tasks: initialTasks }: TaskBoardProps) {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="flex gap-4 h-full w-full">
         {columns.map(column => (
-          <div key={column.id} className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-medium">{column.title}</h3>
-              <span className="text-sm text-primary-medium">
-                {tasks.filter(task => task.status === column.status).length}
-              </span>
+          <div key={column.id} className="flex-shrink-0 w-[280px]">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h3 className="font-medium text-sm">{column.title}</h3>
+                <span className="text-xs px-2 py-1 rounded-full bg-background-light">
+                  {tasks.filter(task => task.status === column.status).length}
+                </span>
+              </div>
             </div>
+            
             <Droppable droppableId={column.id}>
-              {(provided) => (
-                <Card 
-                  className="p-4 space-y-4 min-h-[200px]"
+              {(provided, snapshot) => (
+                <div
+                  className={cn(
+                    "rounded-lg p-2 h-[calc(100%-2rem)] overflow-y-auto",
+                    column.color,
+                    snapshot.isDraggingOver && "ring-2 ring-primary/20 bg-muted/60",
+                    "scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent",
+                    "border border-border/40"
+                  )}
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                 >
-                  {tasks
-                    .filter(task => task.status === column.status)
-                    .map((task, index) => (
-                      <Draggable 
-                        key={task.id} 
-                        draggableId={task.id} 
-                        index={index}
-                      >
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                          >
-                            <TaskCard task={task} />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                  {provided.placeholder}
-                </Card>
+                  <div className="space-y-3">
+                    {tasks
+                      .filter(task => task.status === column.status)
+                      .map((task, index) => (
+                        <Draggable 
+                          key={task.id} 
+                          draggableId={task.id} 
+                          index={index}
+                        >
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={cn(
+                                "transform transition-transform",
+                                snapshot.isDragging && "rotate-2 scale-105"
+                              )}
+                            >
+                              <TaskCard task={task} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                    {provided.placeholder}
+                  </div>
+                </div>
               )}
             </Droppable>
           </div>

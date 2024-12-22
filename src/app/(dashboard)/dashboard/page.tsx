@@ -1,12 +1,12 @@
+import { verifyJwt } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+import { redirect } from "next/navigation"
+import { Meta } from "@/components/seo/Meta"
 import { DashboardStats } from "@/components/dashboard/DashboardStats"
 import { ProjectsList } from "@/components/dashboard/ProjectsList"
 import { RecentActivity } from "@/components/dashboard/RecentActivity"
 import { Card } from "@/components/ui/card"
-import { verifyJwt } from "@/lib/auth"
-import { redirect } from "next/navigation"
-import { prisma } from "@/lib/prisma"
 import { PageTransition } from "@/components/transitions/PageTransition"
-import { Meta } from "@/components/seo/Meta"
 
 export default async function DashboardPage() {
   const payload = await verifyJwt()

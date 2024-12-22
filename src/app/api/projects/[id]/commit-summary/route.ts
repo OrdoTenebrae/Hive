@@ -10,7 +10,7 @@ const octokit = new Octokit({
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   const payload = await verifyJwt()
   if (!payload) {
@@ -20,7 +20,7 @@ export async function GET(
   try {
     // Fetch project and commits
     const project = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id: context.params.id },
       select: { githubRepo: true }
     })
 

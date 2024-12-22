@@ -12,15 +12,22 @@ import { usePathname, useParams } from "next/navigation"
 import { fetchClient } from "@/lib/fetch-client"
 
 export default function ProjectLayout({ children }: { children: React.ReactNode }) {
-  const [installedModules, setInstalledModules] = useState<ModuleType[]>(['kanban'])
+  const [installedModules, setInstalledModules] = useState<ModuleType[]>([])
   const pathname = usePathname()
   const params = useParams()
   const isMarketplace = pathname.endsWith('/marketplace')
   
   useEffect(() => {
-    fetchClient(`/api/projects/${params.id}/modules`)
-      .then(response => setInstalledModules(response.modules))
-      .catch(console.error)
+    const fetchModules = async () => {
+      try {
+        const response = await fetchClient(`/api/projects/${params.id}/modules`)
+        setInstalledModules(response.modules)
+      } catch (error) {
+        console.error('Failed to fetch modules:', error)
+      }
+    }
+    
+    fetchModules()
   }, [params.id])
 
   if (isMarketplace) {
