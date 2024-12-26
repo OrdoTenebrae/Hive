@@ -1,14 +1,20 @@
 import { verifyJwt } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { cookies } from 'next/headers'
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const payload = await verifyJwt()
+    const cookieStore = await cookies()
+    const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
+    
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const payload = await verifyJwt(token)
     if (!payload) {
-      return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-      })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     // Mock activities data matching your interface
@@ -35,8 +41,6 @@ export async function GET() {
     return NextResponse.json(activities)
   } catch (error) {
     console.error('Error fetching activities:', error)
-    return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), {
-      status: 500,
-    })
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 } 

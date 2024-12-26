@@ -11,6 +11,8 @@ import {
 import { useState, useEffect } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
+import { fetchClient } from "@/lib/fetch-client"
+import { toast } from "react-hot-toast"
 
 interface Activity {
   id: string
@@ -28,18 +30,11 @@ export function RecentActivity() {
   useEffect(() => {
     async function fetchActivities() {
       try {
-        const token = localStorage.getItem('token')
-        const response = await fetch('/api/activities', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        if (!response.ok) throw new Error('Failed to fetch activities')
-        const data = await response.json()
+        const data = await fetchClient('/api/activities')
         setActivities(data)
       } catch (error) {
         console.error('Error fetching activities:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to load activities')
       } finally {
         setLoading(false)
       }

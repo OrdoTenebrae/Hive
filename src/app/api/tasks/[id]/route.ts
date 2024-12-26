@@ -1,14 +1,16 @@
 import { verifyJwt } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { cookies } from "next/headers"
 
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const payload = await verifyJwt()
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
   
-  if (!payload) {
+  if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

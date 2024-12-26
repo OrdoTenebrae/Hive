@@ -22,46 +22,56 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
 
   useEffect(() => {
     // Check for stored auth on mount
-    const token = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
 
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser))
-      setupAuthHeaders(token)
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser)
+        setUser(userData)
+      } catch (error) {
+        console.error('Failed to parse stored user:', error)
+        logout()
+      }
     }
     setIsLoading(false)
   }, [])
 
-  const setupAuthHeaders = (token: string) => {
-    document.cookie = `Authorization=Bearer ${token}; path=/`
-    const originalFetch = window.fetch
-    window.fetch = function(input, init = {}) {
-      init.headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        ...(init.headers || {})
-      }
-      return originalFetch(input, init)
+  const login = async (token: string, userData: User) => {
+    try {
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(userData))
+      
+      // Set token in cookies
+      document.cookie = `token=${token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`
+      document.cookie = `Authorization=Bearer ${token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`
+      
+      setUser(userData)
+      
+      // Redirect to dashboard using window.location
+      // This ensures a full page reload and proper cookie handling
+      window.location.href = '/dashboard'
+    } catch (error) {
+      console.error('Login error:', error)
+      logout()
     }
   }
 
-  const login = (token: string, userData: User) => {
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(userData))
-    setUser(userData)
-    setupAuthHeaders(token)
-  }
-
   const logout = () => {
-    localStorage.removeItem('token')
+    // Clear local storage
     localStorage.removeItem('user')
+    
+    // Clear cookies
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
     document.cookie = 'Authorization=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
+    
     setUser(null)
-    router.push('/auth/login')
+    
+    // Redirect to login using window.location
+    // This ensures a full page reload and proper cookie clearing
+    window.location.href = '/auth/login'
   }
 
   return (

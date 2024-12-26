@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast"
 import Script from 'next/script'
 import { AnimatePresence } from "framer-motion"
 
+
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {

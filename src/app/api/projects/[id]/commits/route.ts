@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { Octokit } from "@octokit/rest"
 import { verifyJwt } from "@/lib/auth"
+import { cookies } from "next/headers"
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_ACCESS_TOKEN
@@ -11,8 +12,10 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const payload = await verifyJwt()
-  if (!payload) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
+  
+  if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

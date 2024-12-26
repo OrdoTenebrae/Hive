@@ -1,27 +1,11 @@
-import { AIDataService } from '@/lib/services/ai-data'
-import { prisma } from '@/lib/prisma'
+import { ModuleType } from "@/types/modules"
 
-export async function installModule(projectId: string, moduleId: string) {
-  // Update PostgreSQL for core module tracking
-  await prisma.project.update({
-    where: { id: projectId },
-    data: { 
-      installedModules: {
-        set: ['kanban'] // Initialize with kanban as default if null
-      }
-    }
-  })
+const moduleRegistry = new Map()
 
-  // Store module-specific AI data in MongoDB
-  const aiService = new AIDataService()
-  await aiService.saveData({
-    referenceId: `${projectId}_${moduleId}`,
-    documentType: 'module_data',
-    data: {
-      moduleId,
-      configuration: {},
-      aiState: {},
-      lastAnalysis: null
-    }
-  })
+export function getModule(moduleId: ModuleType) {
+  return moduleRegistry.get(moduleId)
+}
+
+export function registerModule(moduleId: ModuleType, module: any) {
+  moduleRegistry.set(moduleId, module)
 }

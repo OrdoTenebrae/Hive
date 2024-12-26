@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import { Card } from "@/components/ui/card"
 import { verifyJwt } from "@/lib/auth"
 import { redirect } from "next/navigation"
@@ -10,7 +11,12 @@ import { RecentActivity } from "@/components/dashboard/RecentActivity"
 import { ProjectsList } from "@/components/dashboard/ProjectsList"
 
 export default async function SettingsPage() {
-  const payload = await verifyJwt()
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value
+  const cleanToken = token?.replace('Bearer ', '')
+  
+  if (!cleanToken) redirect('/auth/login')
+  const payload = await verifyJwt(cleanToken)
   if (!payload) redirect('/auth/login')
 
   return (

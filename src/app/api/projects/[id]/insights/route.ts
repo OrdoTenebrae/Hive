@@ -6,12 +6,20 @@ import { Task } from '.prisma/client'
 import { User } from '.prisma/client'
 import { ProjectWithFullRelations } from "@/types/project"
 import { AIDataService, isStale } from '@/lib/services/ai-data'
+import { cookies } from "next/headers"
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const payload = await verifyJwt()
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
+  
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const payload = await verifyJwt(token)
   if (!payload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

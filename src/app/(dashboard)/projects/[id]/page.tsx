@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { verifyJwt } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
@@ -11,9 +12,25 @@ type Props = {
 };
 
 export default async function ProjectPage({ params }: Props) {
+  console.log("\n=== Project Page Start ===")
   const resolvedParams = await params; // Resolve params as a Promise
-  const payload = await verifyJwt();
-  if (!payload) redirect('/auth/login');
+  console.log("🎯 Project ID:", resolvedParams.id)
+  
+  // Get token from cookies
+  const cookieStore = cookies()
+  const token = cookieStore.get('token')?.value || 
+                cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
+
+  if (!token) {
+    console.log("❌ No token found, redirecting to login")
+    redirect('/auth/login')
+  }
+
+  const verified = await verifyJwt(token)
+  if (!verified) {
+    console.log("❌ Invalid token, redirecting to login")
+    redirect('/auth/login')
+  }
 
   const project = await prisma.project.findUnique({
     where: { id: resolvedParams.id },
@@ -24,7 +41,29 @@ export default async function ProjectPage({ params }: Props) {
     },
   });
 
-  if (!project) notFound();
+  if (!project) {
+    console.log("❌ Project not found")
+    notFound();
+  }
+
+  // Check if user has access to the project
+  const hasAccess = project.owner.id === verified.id || project.members.some(member => member.id === verified.id);
+  console.log("🔒 Access check:", {
+    hasAccess,
+    isOwner: project.owner.id === verified.id,
+    isMember: project.members.some(member => member.id === verified.id),
+    userId: verified.id,
+    ownerId: project.owner.id,
+    memberIds: project.members.map(m => m.id)
+  })
+  
+  if (!hasAccess) {
+    console.log("❌ Access denied, redirecting to dashboard")
+    redirect('/dashboard');
+  }
+
+  console.log("✅ Access granted to project:", project.name)
+  console.log("=== Project Page End ===\n")
 
   const completedTasks = project.tasks.filter((task) => task.status === 'COMPLETED').length;
   const progress =

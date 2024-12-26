@@ -5,10 +5,9 @@ import { Task } from ".prisma/client"
 import { TaskCard } from "./TaskCard"
 import { useState, useEffect } from "react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
-import { useTaskStore } from "@/lib/store/task-store"
 import { TaskWithAssignee } from "@/types/project"
-import { fetchClient } from "@/lib/fetch-client"
 import { cn } from "@/lib/utils"
+import { toast } from "react-hot-toast"
 
 type Column = {
   id: string
@@ -27,53 +26,49 @@ const columns: Column[] = [
 interface TaskBoardProps {
   projectId: string
   tasks: TaskWithAssignee[]
+  onTaskUpdate?: (taskId: string, updates: Partial<TaskWithAssignee>) => void
 }
 
-export function TaskBoard({ projectId, tasks: initialTasks }: TaskBoardProps) {
-  const { tasks, setTasks, updateTask } = useTaskStore()
+export function TaskBoard({ projectId, tasks: initialTasks, onTaskUpdate }: TaskBoardProps) {
+  const [tasks, setTasks] = useState<TaskWithAssignee[]>(initialTasks)
 
   useEffect(() => {
     setTasks(initialTasks)
-  }, [initialTasks, setTasks])
+  }, [initialTasks])
 
-  const onDragEnd = async (result: any) => {
+  const handleDragEnd = async (result: any) => {
     if (!result.destination) return
 
-    const { source, destination, draggableId } = result
-    if (source.droppableId === destination.droppableId) return
+    const sourceColumn = columns.find(col => col.id === result.source.droppableId)
+    const destColumn = columns.find(col => col.id === result.destination.droppableId)
+    
+    if (!sourceColumn || !destColumn || sourceColumn.id === destColumn.id) return
 
-    const newStatus = columns.find(col => col.id === destination.droppableId)?.status
-    if (!newStatus) return
-
-    // Optimistically update UI
-    updateTask(draggableId, newStatus)
+    const taskId = result.draggableId
+    const updates = { status: destColumn.status }
 
     try {
-      await fetchClient(`/api/tasks/${draggableId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: newStatus })
-      })
+      onTaskUpdate?.(taskId, updates)
     } catch (error) {
-      console.error(error)
+      console.error('Failed to update task:', error)
+      toast.error('Failed to update task status')
+      
       // Revert on error
       setTasks(initialTasks)
     }
   }
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex gap-4 h-full w-full">
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="grid grid-cols-4 gap-4 w-full">
         {columns.map(column => (
-          <div key={column.id} className="flex-shrink-0 w-[280px]">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="font-medium text-sm">{column.title}</h3>
-                <span className="text-xs px-2 py-1 rounded-full bg-background-light">
-                  {tasks.filter(task => task.status === column.status).length}
-                </span>
-              </div>
+          <div key={column.id} className="flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium">{column.title}</h3>
+              <span className="text-xs text-muted-foreground">
+                {tasks.filter(task => task.status === column.status).length}
+              </span>
             </div>
-            
             <Droppable droppableId={column.id}>
               {(provided, snapshot) => (
                 <div
@@ -106,7 +101,10 @@ export function TaskBoard({ projectId, tasks: initialTasks }: TaskBoardProps) {
                                 snapshot.isDragging && "rotate-2 scale-105"
                               )}
                             >
-                              <TaskCard task={task} />
+                              <TaskCard 
+                                task={task} 
+                                onUpdate={(updates) => onTaskUpdate?.(task.id, updates)}
+                              />
                             </div>
                           )}
                         </Draggable>

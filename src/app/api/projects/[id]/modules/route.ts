@@ -1,58 +1,64 @@
 import { NextResponse } from "next/server"
-import { verifyJwt } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { ModuleType } from "@/types/modules"
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string }}
+  request: Request, 
+  context: { params: { id: string } }
 ) {
+  const { id } = context.params
+  
   try {
-    const payload = await verifyJwt()
-    if (!payload) return new NextResponse("Unauthorized", { status: 401 })
-
+    // Get project
     const project = await prisma.project.findUnique({
-      where: { id: params.id },
-      select: {
-        id: true,
-        installedModules: true
-      }
+      where: { id }
     })
 
-    if (!project) return new NextResponse("Project not found", { status: 404 })
-    
-    const modules = project.installedModules as ModuleType[] || ['kanban']
-    return NextResponse.json({ modules })
+    if (!project) {
+      console.log('❌ Project not found:', id)
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    // Return installed modules or default to kanban
+    const defaultModules = ['kanban']
+    console.log('✅ Returning modules for project:', id)
+    return NextResponse.json({ 
+      modules: project.installedModules?.length ? project.installedModules : defaultModules 
+    })
+
   } catch (error) {
-    return new NextResponse("Internal Error", { status: 500 })
+    console.error('❌ Error fetching modules:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch modules' },
+      { status: 500 }
+    )
   }
 }
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
+  const { id } = context.params
+  
   try {
-    const payload = await verifyJwt()
-    if (!payload) return new NextResponse("Unauthorized", { status: 401 })
-
-    const { moduleId } = await req.json()
-    
     const project = await prisma.project.findUnique({
-      where: { id: params.id },
-      select: { installedModules: true }
+      where: { id }
     })
 
-    if (!project) return new NextResponse("Project not found", { status: 404 })
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 })
+    }
 
+    const { moduleId } = await request.json()
     const currentModules = project.installedModules as ModuleType[] || []
     
     if (currentModules.includes(moduleId)) {
-      return new NextResponse("Module already installed", { status: 400 })
+      return NextResponse.json({ error: "Module already installed" }, { status: 400 })
     }
 
     await prisma.project.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         installedModules: {
           set: [...currentModules, moduleId]
@@ -62,6 +68,7 @@ export async function POST(
 
     return NextResponse.json({ modules: [...currentModules, moduleId] })
   } catch (error) {
-    return new NextResponse("Internal Error", { status: 500 })
+    console.error('Error installing module:', error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

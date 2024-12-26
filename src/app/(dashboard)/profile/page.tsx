@@ -4,9 +4,16 @@ import { verifyJwt } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { ProjectCard } from "@/components/projects/ProjectCard"
+import { cookies } from 'next/headers'
 
 export default async function ProfilePage() {
-  const payload = await verifyJwt()
+  const cookieStore = await cookies()
+  const token = 
+    cookieStore.get('token')?.value || 
+    cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
+  
+  if (!token) redirect('/auth/login')
+  const payload = await verifyJwt(token)
   if (!payload) redirect('/auth/login')
 
   const user = await prisma.user.findUnique({

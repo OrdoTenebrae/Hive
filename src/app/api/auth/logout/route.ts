@@ -3,6 +3,11 @@ import { NextResponse } from "next/server"
 
 export async function POST() {
   const cookieStore = await cookies()
-  cookieStore.delete("token")
-  return NextResponse.json({ success: true })
+  
+  // Clear all auth cookies
+  const response = NextResponse.json({ success: true })
+  response.cookies.delete('token')
+  response.cookies.delete('Authorization')
+  
+  return response
 } 

@@ -54,7 +54,9 @@ export async function POST(req: Request) {
     console.log("🔑 Token preview:", token.substring(0, 20) + "...")
 
     console.log("=== Login API End ===\n")
-    return NextResponse.json({
+    
+    // Create response with user data and token
+    const response = NextResponse.json({
       token,
       user: {
         id: user.id,
@@ -63,6 +65,35 @@ export async function POST(req: Request) {
         role: user.role
       }
     })
+
+    // Set cookies
+    response.cookies.set('token', token, {
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    })
+
+    // Also set Authorization header cookie for API requests
+    response.cookies.set('Authorization', `Bearer ${token}`, {
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    })
+
+    // Set Authorization header
+    response.headers.set('Authorization', `Bearer ${token}`)
+
+    console.log("✅ Set cookies and headers:", {
+      token: token.substring(0, 20) + "...",
+      cookies: response.cookies.getAll(),
+      headers: response.headers.get('Authorization')
+    })
+
+    return response
   } catch (error) {
     console.error("❌ Login API error:", error)
     console.log("=== Login API End (Error) ===\n")

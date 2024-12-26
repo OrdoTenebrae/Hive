@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { analyzeCommits, parseAIAnalysis } from "@/lib/services/ai-services"
 import { Octokit } from "@octokit/rest"
 import { verifyJwt } from "@/lib/auth"
+import { cookies } from 'next/headers'
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_ACCESS_TOKEN
@@ -12,7 +13,14 @@ export async function GET(
   request: Request,
   context: { params: { id: string } }
 ) {
-  const payload = await verifyJwt()
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
+  
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const payload = await verifyJwt(token)
   if (!payload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

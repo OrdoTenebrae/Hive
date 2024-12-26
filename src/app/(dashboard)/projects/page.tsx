@@ -6,9 +6,18 @@ import { verifyJwt } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { ProjectWithRelations } from "@/types/project"
+import { cookies } from 'next/headers'
 
 export default async function ProjectsPage() {
-  const payload = await verifyJwt()
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value
+  const cleanToken = token?.replace('Bearer ', '')
+
+  if (!cleanToken) {
+    redirect('/auth/login')
+  }
+
+  const payload = await verifyJwt(cleanToken)
   
   if (!payload) {
     redirect('/auth/login')

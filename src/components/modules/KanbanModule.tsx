@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { fetchClient } from "@/lib/fetch-client"
 import { TaskWithAssignee } from "@/types/project"
 import { CreateTaskModal } from "@/components/projects/CreateTaskModal"
+import { useRealTime } from "@/contexts/RealTimeContext"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,21 +22,37 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from "next/navigation"
+import { toast } from "react-hot-toast"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface KanbanModuleProps {
   projectId: string
 }
 
 export function KanbanModule({ projectId }: KanbanModuleProps) {
+  const { user } = useAuth()
   const [size, setSize] = useState<"normal" | "large">("normal")
   const [tasks, setTasks] = useState<TaskWithAssignee[]>([])
   const [members, setMembers] = useState<{ id: string; name: string | null }[]>([])
   const router = useRouter()
+  const { subscribe, publish } = useRealTime()
 
   useEffect(() => {
     fetchClient(`/api/projects/${projectId}/tasks?include=assignee`).then(setTasks)
     fetchClient(`/api/projects/${projectId}/members`).then(setMembers)
-  }, [projectId])
+
+    const unsubscribe = subscribe((message: any) => {
+      if (message.type === 'TASK_UPDATED' && message.payload) {
+        setTasks(prev => prev.map(task => 
+          task.id === message.payload.taskId 
+            ? { ...task, ...message.payload.updates }
+            : task
+        ))
+      }
+    })
+
+    return () => unsubscribe()
+  }, [projectId, subscribe])
 
   const handleUninstall = async () => {
     try {
@@ -45,6 +62,39 @@ export function KanbanModule({ projectId }: KanbanModuleProps) {
       window.location.reload()
     } catch (error) {
       console.error('Failed to uninstall module:', error)
+      toast.error('Failed to uninstall module')
+    }
+  }
+
+  const handleTaskUpdate = async (taskId: string, updates: Partial<TaskWithAssignee>) => {
+    try {
+      // Optimistically update local state
+      setTasks(prev => prev.map(task => 
+        task.id === taskId 
+          ? { ...task, ...updates }
+          : task
+      ))
+
+      // Send real-time update
+      publish({
+        type: 'TASK_UPDATED',
+        payload: {
+          taskId,
+          updates
+        }
+      })
+
+      // Persist to server
+      await fetchClient(`/api/projects/${projectId}/tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      })
+    } catch (error) {
+      console.error('Failed to update task:', error)
+      toast.error('Failed to update task')
+      
+      // Revert optimistic update on error
+      fetchClient(`/api/projects/${projectId}/tasks?include=assignee`).then(setTasks)
     }
   }
 
@@ -98,7 +148,11 @@ export function KanbanModule({ projectId }: KanbanModuleProps) {
         <div className="absolute inset-0 flex flex-col">
           <div className="flex-1 overflow-x-auto overflow-y-hidden">
             <div className="h-full flex gap-4 p-4 min-w-[calc(280px*4+1rem)]">
-              <TaskBoard projectId={projectId} tasks={tasks} />
+              <TaskBoard 
+                projectId={projectId} 
+                tasks={tasks} 
+                onTaskUpdate={handleTaskUpdate}
+              />
             </div>
           </div>
         </div>

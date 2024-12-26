@@ -1,7 +1,6 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { ProjectWithRelations } from "@/types/project"
 import { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
@@ -11,7 +10,6 @@ import { ProjectsListSkeleton } from './ProjectsListSkeleton'
 import { EmptyState } from '../ui/empty-state'
 import { CreateProjectButton } from './CreateProjectButton'
 import { fetchClient } from "@/lib/fetch-client"
-import { Project } from ".prisma/client"
 
 export function ProjectsList() {
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
@@ -20,18 +18,11 @@ export function ProjectsList() {
   useEffect(() => {
     async function fetchProjects() {
       try {
-        const token = localStorage.getItem('token')
-        const response = await fetch('/api/projects', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        if (!response.ok) throw new Error('Failed to fetch projects')
-        const data = await response.json()
+        const data = await fetchClient('/api/projects')
         setProjects(data)
       } catch (error) {
-        toast.error('Failed to load projects')
+        console.error('Failed to load projects:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to load projects')
       } finally {
         setLoading(false)
       }

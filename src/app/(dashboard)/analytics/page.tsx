@@ -4,9 +4,18 @@ import { LineChart, BarChart } from "@/components/analytics/Charts"
 import { verifyJwt } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
+import { cookies } from 'next/headers'
 
 export default async function AnalyticsPage() {
-  const payload = await verifyJwt()
+  const cookieStore = await cookies()
+  const authToken = cookieStore.get('Authorization')?.value
+  const token = cookieStore.get('token')?.value
+  
+  // Get token from either cookie, removing Bearer prefix if present
+  const finalToken = (authToken || token)?.replace('Bearer ', '')
+  
+  if (!finalToken) redirect('/auth/login')
+  const payload = await verifyJwt(finalToken)
   if (!payload) redirect('/auth/login')
 
   const stats = await prisma.project.aggregate({

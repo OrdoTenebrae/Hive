@@ -33,6 +33,7 @@ import {
 
 interface TaskCardProps {
   task: TaskWithAssignee
+  onUpdate?: (updates: Partial<TaskWithAssignee>) => void
 }
 
 const priorityConfig = {
@@ -56,7 +57,7 @@ const priorityConfig = {
   }
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onUpdate }: TaskCardProps) {
   const PriorityIcon = priorityConfig[task.priority]?.icon || CircleDot
   
   return (
@@ -70,9 +71,9 @@ export function TaskCard({ task }: TaskCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem>Edit Task</DropdownMenuItem>
-              <DropdownMenuItem>Add Subtask</DropdownMenuItem>
-              <DropdownMenuItem>Change Status</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onUpdate?.({ priority: 'HIGH' })}>Set High Priority</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onUpdate?.({ priority: 'MEDIUM' })}>Set Medium Priority</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onUpdate?.({ priority: 'LOW' })}>Set Low Priority</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive">Delete Task</DropdownMenuItem>
             </DropdownMenuContent>

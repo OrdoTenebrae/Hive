@@ -1,13 +1,21 @@
 import { prisma } from "@/lib/prisma"
 import { verifyJwt } from "@/lib/auth"
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const payload = await verifyJwt()
+    const cookieStore = await cookies()
+    const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
+    
+    if (!token) {
+      return new NextResponse("Unauthorized", { status: 401 })
+    }
+
+    const payload = await verifyJwt(token)
     if (!payload) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
@@ -38,7 +46,14 @@ export async function GET(
 
 export async function POST(request: Request) {
   try {
-    const payload = await verifyJwt()
+    const cookieStore = await cookies()
+    const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
+    
+    if (!token) {
+      return new NextResponse("Unauthorized", { status: 401 })
+    }
+
+    const payload = await verifyJwt(token)
     if (!payload) {
       return new NextResponse("Unauthorized", { status: 401 })
     }

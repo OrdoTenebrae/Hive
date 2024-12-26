@@ -1,52 +1,49 @@
-import { SignJWT, jwtVerify } from 'jose'
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
+import { jwtVerify, SignJWT } from 'jose'
+import { JWTPayload as JoseJWTPayload } from 'jose'
 
 if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET is not defined in environment variables")
+  throw new Error('JWT_SECRET is not defined in environment variables')
 }
+
 const secret = new TextEncoder().encode(process.env.JWT_SECRET)
-console.log("🔑 JWT_SECRET configured:", process.env.JWT_SECRET?.substring(0, 4) + "...")
 
-export async function signJwt(payload: { id: string; email: string; role: string }) {
-  try {
-    console.log("🔐 Attempting to sign JWT for:", payload.email)
-    const token = await new SignJWT(payload)
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('30d')
-      .sign(secret)
-    console.log("✅ JWT signed successfully")
-    return token
-  } catch (error) {
-    console.error("❌ Error in signJwt:", error)
-    throw error
-  }
-}
-
-interface JWTPayload {
+interface CustomJWTPayload extends JoseJWTPayload {
   id: string
   email: string
-  role: string
   name?: string
+  role?: string
 }
 
-export async function verifyJwt(): Promise<JWTPayload | null> {
+export async function verifyJwt(token: string): Promise<CustomJWTPayload | null> {
   try {
-    const headersList = await headers()
-    const authHeader = headersList.get('Authorization')
-    console.log("🔍 Verifying JWT with auth header:", !!authHeader)
-    
-    const token = authHeader?.split('Bearer ')[1]
-    if (!token) {
-      console.log("❌ No token found in auth header")
-      return null
-    }
-    
-    console.log("🔄 Attempting to verify token")
-    const verified = await jwtVerify(token, secret)
-    console.log("✅ Token verified successfully for:", verified.payload.email)
-    return verified.payload as unknown as JWTPayload
+    const { payload } = await jwtVerify(token, secret)
+    return payload as CustomJWTPayload
   } catch (error) {
-    console.error("❌ Token verification failed:", error)
     return null
   }
+}
+
+export async function verifyAuth() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')?.value || cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
+  
+  if (!token) {
+    throw new Error('Unauthorized')
+  }
+
+  const payload = await verifyJwt(token)
+  if (!payload || !payload.id) {
+    throw new Error('Invalid token')
+  }
+
+  return { userId: payload.id }
+}
+
+export async function signJwt(payload: Omit<CustomJWTPayload, keyof JoseJWTPayload>) {
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('24h')
+    .sign(secret)
 }

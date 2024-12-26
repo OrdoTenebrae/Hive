@@ -6,6 +6,7 @@ import {
   Code, Terminal, Layout 
 } from "lucide-react"
 import { KanbanModule } from "../../components/modules/KanbanModule"
+import { ChatModule } from "../../components/modules/ChatModule"
 
 export const moduleDefinitions: Record<ModuleType, ModuleDefinition> = {
   kanban: {
@@ -35,7 +36,7 @@ export const moduleDefinitions: Record<ModuleType, ModuleDefinition> = {
       "Thread discussions",
       "Integrations"
     ],
-    component: KanbanModule,
+    component: ChatModule,
     requiredPlan: "free"
   },
   analytics: {

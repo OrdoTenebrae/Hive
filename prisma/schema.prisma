@@ -20,6 +20,7 @@ model User {
   ownedProjects Project[] @relation("ProjectOwner")
   assignedTasks Task[]    @relation("TaskAssignee")
   activities    Activity[]
+  messages      ChatMessage[] @relation("MessageSender")
 }
 
 model Project {
@@ -35,6 +36,7 @@ model Project {
   githubRepo  String?
   tasks       Task[]    @relation("ProjectTasks")
   activities  Activity[]
+  messages    ChatMessage[] @relation("ProjectMessages")
   installedModules String[] @default([])
 }
 
@@ -94,3 +96,18 @@ enum TaskStatus {
   IN_REVIEW
   COMPLETED
 }
+
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  project   Project  @relation("ProjectMessages", fields: [projectId], references: [id])
+  projectId String
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id])
+  senderId  String
+
+  @@index([projectId])
+  @@index([senderId])
+} 
+

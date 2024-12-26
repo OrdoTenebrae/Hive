@@ -1,27 +1,24 @@
-import { Suspense } from 'react'
-import { getModule } from '@/lib/modules/registry'
-import { ModuleType } from '@/types/modules'
-import { Card } from '@/components/ui/card'
-import { Loader2 } from 'lucide-react'
+"use client"
+
+import { KanbanModule } from "./KanbanModule"
+import { ChatModule } from "./ChatModule"
 
 interface ModuleLoaderProps {
-  moduleId: ModuleType
+  moduleId: string
   projectId: string
 }
 
+const moduleRegistry = {
+  kanban: KanbanModule,
+  chat: ChatModule
+}
+
 export function ModuleLoader({ moduleId, projectId }: ModuleLoaderProps) {
-  const module = getModule(moduleId)
-  if (!module) return null
+  const Module = moduleRegistry[moduleId as keyof typeof moduleRegistry]
   
-  const ModuleComponent = module.component
-  
-  return (
-    <Suspense fallback={
-      <Card className="p-4 flex items-center justify-center min-h-[200px]">
-        <Loader2 className="w-6 h-6 animate-spin" />
-      </Card>
-    }>
-      <ModuleComponent projectId={projectId} />
-    </Suspense>
-  )
+  if (!Module) {
+    return <div>Module not found</div>
+  }
+
+  return <Module projectId={projectId} />
 }
