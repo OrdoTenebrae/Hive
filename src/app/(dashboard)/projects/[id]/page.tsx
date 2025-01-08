@@ -17,7 +17,7 @@ export default async function ProjectPage({ params }: Props) {
   console.log("🎯 Project ID:", resolvedParams.id)
   
   // Get token from cookies
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const token = cookieStore.get('token')?.value || 
                 cookieStore.get('Authorization')?.value?.replace('Bearer ', '')
 

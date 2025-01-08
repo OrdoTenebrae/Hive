@@ -1,4 +1,4 @@
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 import { WebSocketServer } from 'ws'
 import { verifyJwt } from "@/lib/auth"
